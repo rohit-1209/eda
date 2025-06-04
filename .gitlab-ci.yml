@@ -1,0 +1,20 @@
+include:
+  - project: 'to-be-continuous/docker'
+    ref: '5.3.0'
+    file: '/templates/gitlab-ci-docker.yml'
+
+variables:
+  DOCKER_TRIVY_DISABLED: 'true'
+  DOCKER_SBOM_DISABLED: 'true'
+  DOCKER_BUILD_TOOL: "kaniko"
+
+
+docker-publish:
+  extends: .docker-base
+  image:
+    name: "$DOCKER_SKOPEO_IMAGE"
+    entrypoint: [""]
+  stage: publish
+  before_script:
+    - microdnf install -y gawk 
+    - !reference [.docker-scripts]
