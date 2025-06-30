@@ -1,6 +1,6 @@
 # Get.py
 import psycopg2
-from db.config import Database
+from full_test_autoeda.autoeda_back_flask.db.config import Database
 import logging
 
 logger = logging.getLogger(__name__)

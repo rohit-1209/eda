@@ -1,6 +1,6 @@
 # rollback_helper_function
 
-from db.config import Database
+from full_test_autoeda.autoeda_back_flask.db.config import Database
 import logging
 
 logger = logging.getLogger(__name__)
@@ -23,7 +23,8 @@ def sync_table_structure(cursor, original_table, copy_table):
         
         # Add or modify columns in copy table
         for column_name, data_type in original_columns:
-            column_name_quoted = f'"{column_name.replace("\"", "\"\"")}"'
+            column_name_quoted = '"{}"'.format(column_name.replace('"', '""'))
+
             
             # Add column if it doesn't exist
             cursor.execute(f"""
@@ -56,7 +57,7 @@ def sync_table_structure(cursor, original_table, copy_table):
         
         for column_name in copy_columns:
             if column_name not in original_column_types:
-                column_name_quoted = f'"{column_name.replace("\"", "\"\"")}"'
+                column_name_quoted = '"{}"'.format(column_name.replace('"', '""'))
                 cursor.execute(f"ALTER TABLE {copy_table} DROP COLUMN IF EXISTS {column_name_quoted};")
                 
         return True

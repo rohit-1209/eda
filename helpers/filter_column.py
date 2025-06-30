@@ -1,6 +1,6 @@
 #filtering_helper_function
 
-from db.config import Database
+from full_test_autoeda.autoeda_back_flask.db.config import Database
 import logging
 import pandas as pd
 from io import StringIO
@@ -19,46 +19,61 @@ def filter_dataframe_multiple(df, filters):
                 if isinstance(filter_value, dict):
                     operator = filter_value.get('operator')
                     value = filter_value.get('value')
-                    
+
+                    # Handle numerical comparisons
                     if operator == '<':
                         filtered_df = filtered_df[filtered_df[column] < value]
                     elif operator == '>':
                         filtered_df = filtered_df[filtered_df[column] > value]
+
+                    # Single substring contains
                     elif operator == 'contains':
-                        filtered_df = filtered_df[filtered_df[column].str.contains(value, case=False, na=False)]
+                        filtered_df[column] = filtered_df[column].astype(str).str.lower().str.strip()
+                        filtered_df = filtered_df[filtered_df[column].str.contains(str(value).strip().lower(), na=False)]
+
+                    # NEW: multiple substring contains (contains_any)
+                    elif operator == 'contains_any':
+                        filtered_df[column] = filtered_df[column].fillna('').astype(str).str.lower().str.strip()
+                        pattern = '|'.join([str(v).strip().lower() for v in value if v])
+                        filtered_df = filtered_df[filtered_df[column].str.contains(pattern, na=False)]
+
                 else:
-                    if df[column].dtype == 'O':  
+                    # Non-dict filters (simple equals or list for categorical/numeric)
+
+                    # String column
+                    if df[column].dtype == 'O':
                         if isinstance(filter_value, str):
-                            filter_value = filter_value.strip()  
-                            filtered_df = filtered_df[filtered_df[column].str.strip() == filter_value]
-                        elif pd.isna(filter_value):  
+                            filter_value = filter_value.strip()
+                            filtered_df[column] = filtered_df[column].astype(str).str.strip()
+                            filtered_df = filtered_df[filtered_df[column] == filter_value]
+                        elif pd.isna(filter_value):
                             filtered_df = filtered_df[filtered_df[column].isna()]
 
-                    elif pd.api.types.is_numeric_dtype(df[column]):  
+                    # Numeric column
+                    elif pd.api.types.is_numeric_dtype(df[column]):
                         df[column] = pd.to_numeric(df[column], errors='coerce')
                         if isinstance(filter_value, (int, float)):
                             filter_value = float(filter_value)
-                        elif isinstance(filter_value, list):  
+                            filtered_df = filtered_df[filtered_df[column] == filter_value]
+                        elif isinstance(filter_value, list):
                             filter_value = [float(v) if isinstance(v, (int, float, str)) and not pd.isna(v) else v for v in filter_value]
-                        
-                        if isinstance(filter_value, list):
                             filtered_df = filtered_df[filtered_df[column].isin(filter_value)]
-                        else:
-                            filtered_df = filtered_df[filtered_df[column] == filter_value]
 
-                    elif pd.api.types.is_datetime64_any_dtype(df[column]): 
-                        df[column] = pd.to_datetime(df[column], errors='coerce')  
-                        if isinstance(filter_value, str):  
+                    # Datetime column
+                    elif pd.api.types.is_datetime64_any_dtype(df[column]):
+                        df[column] = pd.to_datetime(df[column], errors='coerce')
+                        if isinstance(filter_value, str):
                             filter_value = pd.to_datetime(filter_value, errors='coerce')
                             filtered_df = filtered_df[filtered_df[column] == filter_value]
-                        elif isinstance(filter_value, list):  
+                        elif isinstance(filter_value, list):
                             if len(filter_value) == 2:
-                                start_date, end_date = pd.to_datetime(filter_value[0], errors='coerce'), pd.to_datetime(filter_value[1], errors='coerce')
-                                filtered_df = filtered_df[(filtered_df[column] >= start_date) & (filtered_df[column] <= end_date)]
-                        elif isinstance(filter_value, str) and len(filter_value) == 10:  
-                            filter_value = pd.to_datetime(filter_value, errors='coerce')
-                            filtered_df = filtered_df[filtered_df[column].dt.date == filter_value.date()]
-                        elif pd.isna(filter_value):  
+                                start_date = pd.to_datetime(filter_value[0], errors='coerce')
+                                end_date = pd.to_datetime(filter_value[1], errors='coerce')
+                                filtered_df = filtered_df[
+                                    (filtered_df[column] >= start_date) &
+                                    (filtered_df[column] <= end_date)
+                                ]
+                        elif pd.isna(filter_value):
                             filtered_df = filtered_df[filtered_df[column].isna()]
 
                 logger.info(f"Filtering {column} with value {filter_value}, remaining rows: {len(filtered_df)}")
@@ -71,6 +86,7 @@ def filter_dataframe_multiple(df, filters):
                 continue
 
     return filtered_df
+
 
 def apply_filters_to_table(original_table_name, sheet_name, filters):
     """Apply filters to a table and update the copy table with filtered data."""
@@ -123,7 +139,7 @@ def apply_filters_to_table(original_table_name, sheet_name, filters):
         return {
             "message": "Data filtered successfully",
             "filtered_count": len(filtered_df),
-            "data": result  
+            "filtered_data": result
         }, None
 
     except Exception as e:

@@ -1,6 +1,6 @@
 # updated_overview_helper_function
 
-from db.config import Database
+from full_test_autoeda.autoeda_back_flask.db.config import Database
 
 def get_column_types_from_db(table_name):
     """Get the column types directly from PostgreSQL schema."""

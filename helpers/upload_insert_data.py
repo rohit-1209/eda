@@ -1,7 +1,7 @@
 # upload_insert_data_db_helper_function
 import pandas as pd
 from io import BytesIO, StringIO
-from db.config import Database
+from full_test_autoeda.autoeda_back_flask.db.config import Database
 
 def get_sql_type(dtype):
     """Convert pandas dtype to SQL type."""

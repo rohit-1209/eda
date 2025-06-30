@@ -1,7 +1,7 @@
 # handling_filling_helper_function
 
 import pandas as pd
-from db.config import Database
+from full_test_autoeda.autoeda_back_flask.db.config import Database
 from io import StringIO
 import logging
 
