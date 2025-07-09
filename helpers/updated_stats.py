@@ -1,6 +1,6 @@
 #updated_statistics_helper_function.py
 
-from full_test_autoeda.autoeda_back_flask.db.config import Database
+from db.config import Database
 import logging
 
 logger = logging.getLogger(__name__)

@@ -9,25 +9,26 @@ import os
 load_dotenv()
 
 DB_CONFIG = {
-     'host': os.getenv('DB_HOST'),
+    'host': os.getenv('DB_HOST'),
     'user': os.getenv('DB_USER'),
     'password': os.getenv('DB_PASSWORD'),
-    'database': os.getenv('DB_NAME')
+    'dbname': os.getenv('DB_NAME')  # ✅ This must be 'dbname'
 }
-
 
 class Database:
     def __init__(self):
         self.config = DB_CONFIG
-    
+
     def get_db_connection(self):
         try:
+            print("🔧 DB connection config:", self.config)  # ADD THIS
             conn = psycopg2.connect(**self.config)
+            print("✅ Database connection established.")  # ADD THIS
             return conn
         except Exception as e:
-            print(f"Database connection failed: {e}")
+            print(f"❌ Database connection failed: {e}")  # ADD THIS
             return None
-            
+
     def close_connection(self, conn):
         if conn:
             conn.close()

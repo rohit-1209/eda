@@ -1,6 +1,6 @@
 # datatype_manage_helper_function
 
-from full_test_autoeda.autoeda_back_flask.db.config import Database
+from db.config import Database
 import logging
 import json
 from datetime import date, datetime

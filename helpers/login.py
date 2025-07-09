@@ -1,5 +1,5 @@
 # login_helper_function
-from full_test_autoeda.autoeda_back_flask.db.config import Database
+from db.config import Database
 import logging
 import uuid
 from datetime import datetime, timedelta

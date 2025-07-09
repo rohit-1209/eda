@@ -1,4 +1,4 @@
-from full_test_autoeda.autoeda_back_flask.db.config import Database
+from db.config import Database
 import logging
 
 logger = logging.getLogger(__name__)
@@ -70,6 +70,12 @@ def get_table_data(filename, sheet_name):
                 columns = [col[0] for col in cursor.fetchall()]
         except Exception as e:
             logger.warning(f"Could not drop 'id' column: {str(e)}")
+            if conn:
+                conn.rollback()
+                cursor.close()
+                cursor = conn.cursor()
+
+
             # Continue even if dropping the column fails
 
         # Get the data

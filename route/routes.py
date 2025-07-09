@@ -3,11 +3,13 @@ from io import BytesIO,StringIO
 from flask import Blueprint, request, jsonify, Flask, make_response, flash, current_app, redirect
 import helpers
 import pandas as pd
-from full_test_autoeda.autoeda_back_flask.helpers.Get_data import get_table_data
-from full_test_autoeda.autoeda_back_flask.helpers.Updated_Get_O_D import Gets_Data
-from full_test_autoeda.autoeda_back_flask.helpers.updated_stats import get_table_statistic
+import re
+from helpers.Get_data import get_table_data
+from helpers.Updated_Get_O_D import Gets_Data
+from helpers.updated_stats import get_table_statistic
 import json
 from datetime import date, datetime,timedelta
+from helpers.upload_insert_data import get_sheet_names
 import jwt
 from io import StringIO
 import psycopg2
@@ -24,23 +26,23 @@ import logging
 import re
 from functools import wraps
 from jwt import ExpiredSignatureError, InvalidTokenError
-from full_test_autoeda.autoeda_back_flask.helpers.login import authenticate_user
-from full_test_autoeda.autoeda_back_flask.helpers.remove_column import get_remaining_columns,verify_table_exists,remove_columns
-from full_test_autoeda.autoeda_back_flask.helpers.upload_insert_data import insert_data_from_excel
-from full_test_autoeda.autoeda_back_flask.helpers.update_overview import get_column_types_from_db
-from full_test_autoeda.autoeda_back_flask.helpers.filter_column import filter_dataframe_multiple,apply_filters_to_table
-from full_test_autoeda.autoeda_back_flask.helpers.change_datatype import check_table_existence, change_column_data_types, CustomJSONEncoder
-from full_test_autoeda.autoeda_back_flask.helpers.logout_delete_file import delete_data_from_table
-from full_test_autoeda.autoeda_back_flask.helpers.handle_fill import  handle_missing_data
-from full_test_autoeda.autoeda_back_flask.helpers.feature_engineering import process_categorical_features
-from full_test_autoeda.autoeda_back_flask.helpers.rename_column import rename_columns_in_copy
-from full_test_autoeda.autoeda_back_flask.helpers.rollback import sync_table_structure,sync_data_from_original_to_copy,sync_tables
-from full_test_autoeda.autoeda_back_flask.helpers.remove_duplicate_row import remove_duplicates_from_table
-from full_test_autoeda.autoeda_back_flask.helpers.data_type import get_table_data_types
-from full_test_autoeda.autoeda_back_flask.helpers.feedback import submit_user_feedback
+from  helpers.login import authenticate_user
+from  helpers.remove_column import get_remaining_columns,verify_table_exists,remove_columns
+from  helpers.upload_insert_data import insert_data_from_excel
+from  helpers.update_overview import get_column_types_from_db
+from  helpers.filter_column import filter_dataframe_multiple,apply_filters_to_table
+from  helpers.change_datatype import check_table_existence, change_column_data_types, CustomJSONEncoder
+from  helpers.logout_delete_file import delete_data_from_table
+from  helpers.handle_fill import  handle_missing_data
+from  helpers.feature_engineering import process_categorical_features
+from  helpers.rename_column import rename_columns_in_copy
+from  helpers.rollback import sync_table_structure,sync_data_from_original_to_copy,sync_tables
+from  helpers.remove_duplicate_row import remove_duplicates_from_table
+from  helpers.data_type import get_table_data_types
+from  helpers.feedback import submit_user_feedback
 # from helpers.stats import get_table_statistics
-from full_test_autoeda.autoeda_back_flask.helpers.stats import get_table_statistics
-from full_test_autoeda.autoeda_back_flask.db.config import Database
+from  helpers.stats import get_table_statistics
+from  db.config import Database
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -79,25 +81,20 @@ main = Blueprint("main", __name__)
 
 # count Router
 @main.route('/get_data', methods=['GET'])
-@token_required
+  #@token_required
 def get_data_display():
     """Display dataset overview from the specified table."""
-    Filename = request.args.get('Filename')
-    print(request.args)
-    print("filename", Filename)
-    sheet_name = request.args.get('sheetName')
-    print("sheetname", sheet_name)
+    table_name = request.args.get('table_name')
+    sheet_name = request.args.get('sheet_name')
 
-    if not Filename:
-        return jsonify({"error": "Filename name is required as a query parameter"}), 400
+    if not table_name:
+        return jsonify({"error": "Table name is required"}), 400
 
-    print("+++++++++++++++++++", get_table_data(Filename, sheet_name))
-    result, error = get_table_data(Filename, sheet_name)
+    result, error = get_table_data(table_name, sheet_name)
 
     if error:
         return jsonify({"error": error}), 400
 
-    # Access the data and columns from the result dictionary
     df = pd.DataFrame(result['data'], columns=result['columns'])
 
     overview = {
@@ -111,10 +108,9 @@ def get_data_display():
 
     return jsonify(overview), 200
 
-
 # datatype_manage Router
 @main.route('/check_table/<table_name>', methods=['GET'])
-@token_required
+  #@token_required
 def check_table_exists(table_name):
     """Check if a table exists and return its column information."""
     try:
@@ -133,7 +129,7 @@ def check_table_exists(table_name):
 
 
 @main.route('/manage_datatype', methods=['POST'])
-@token_required
+  #@token_required
 def change_data_types():
     """Change the data types of columns in a table."""
     try:
@@ -167,7 +163,7 @@ def change_data_types():
 
 # datatype Router
 @main.route('/datatypes', methods=['GET'])
-@token_required
+  #@token_required
 def display_data_types():
     """Display the data types of columns in the specified table."""
     try:
@@ -198,7 +194,7 @@ def display_data_types():
 
 # display_f Router
 @main.route('/data', methods=['GET'])
-@token_required
+  #@token_required
 def fetch_data():
     try:
         filename = request.args.get('Filename')
@@ -226,7 +222,7 @@ def fetch_data():
 
 # feature_engineering Router
 @main.route('/feature_engineering', methods=['POST'])
-@token_required
+  #@token_required
 def handle_categorical():
     try:
         data = request.json
@@ -259,7 +255,7 @@ def handle_categorical():
 
 # Feedback Route
 @main.route('/feedback', methods=['POST'])
-@token_required
+  #@token_required
 def submit_feedback():
     try:
         data = request.get_json()
@@ -287,7 +283,7 @@ def submit_feedback():
 
 # fill_missing Router
 @main.route('/handle/fill', methods=['POST'])
-@token_required
+  #@token_required
 def handle_missing_values():
     try:
         data = request.get_json()
@@ -325,7 +321,7 @@ def handle_missing_values():
 
 # filtering Router
 @main.route('/filtering', methods=['POST'])
-@token_required
+  #@token_required
 def filter_data():
     try:
         data = request.json
@@ -381,7 +377,7 @@ def login():
 
 # logout Route
 @main.route('/logout', methods=['POST'])
-@token_required
+  #@token_required
 def logout_data():
     if request.method == 'POST':
         data = request.get_json()
@@ -411,7 +407,7 @@ def logout_data():
 
 # pre_stats Route
 @main.route('/stats', methods=['GET'])
-@token_required
+  #@token_required
 def display_statistics():
     logger.info("Received request for statistics")
     try:
@@ -437,7 +433,7 @@ def display_statistics():
 
 # remove_column Router
 @main.route('/manage_columns', methods=['POST'])
-@token_required
+  #@token_required
 def manage_columns():
     """Remove columns in the specified table based on user input."""
     try:
@@ -469,7 +465,7 @@ def manage_columns():
 
 # rename_column Route
 @main.route('/rename_column', methods=['POST'])
-@token_required
+  #@token_required
 def rename_columns_copy_api():
     try:
         data = request.json
@@ -494,7 +490,7 @@ def rename_columns_copy_api():
 
 # rollback Router
 @main.route('/sync', methods=['POST'])
-@token_required
+  #@token_required
 def sync_tables_route():
     try:
         # Validate input
@@ -529,7 +525,7 @@ def sync_tables_route():
 
 # updated_count Router
 @main.route('/updated_overview', methods=['GET'])
-@token_required
+  #@token_required
 def display_overview():
     """Display dataset overview from the specified table's copy."""
     try:
@@ -578,7 +574,7 @@ def display_overview():
 
 # Updated_display Router
 @main.route('/updated_display', methods=['GET'])
-@token_required
+  #@token_required
 def fetched_data():
     try:
         # Get filename from query parameter
@@ -610,7 +606,7 @@ def fetched_data():
 
 # updtaed_statistics
 @main.route('/updated_statistics', methods=['GET'])
-@token_required
+  #@token_required
 def get_updated_statistics():
     try:
         table_name = request.args.get('Filename')
@@ -632,8 +628,13 @@ def get_updated_statistics():
 
 
 # upload Router
-@main.route('/upload/', methods=['GET', 'POST'])
-@token_required
+import os
+from flask import request, jsonify
+from route.routes import main
+  # adjust import as needed
+
+@main.route('/upload/', methods=['POST', 'GET'])
+#   #@token_required  # Uncomment if you want to enable token checking later
 def upload_excel():
     if request.method == 'POST':
         print("Request files:", request.files)
@@ -641,45 +642,63 @@ def upload_excel():
 
         if 'file' not in request.files:
             print("Key not found in request files")
-            return jsonify({'error': 'No file part in the request'}), 405
+            return jsonify({'error': 'No file part in the request'}), 400
 
         file = request.files['file']
 
-        sheetname = request.form['sheetName']
-        print(sheetname)
-
         if file.filename == '':
-            return jsonify({'error': 'No file selected'}), 405
+            return jsonify({'error': 'No file selected'}), 400
 
         if not file.filename.endswith(('.xls', '.xlsx', '.csv')):
             return jsonify({'error': 'Invalid file format. Only .xls, .csv and .xlsx are allowed.'}), 400
 
-        original_table_name = os.path.splitext(file.filename)[0]
-        original_table_name = f"{original_table_name}_{sheetname}"
+        # Get sheetName if present
+        sheetname = request.form.get('sheetName')
 
-        copy_table_name = f"{original_table_name}_copy"
+        if sheetname:
+            # Case 2: sheetName present -> process file with this sheet
+            import re
+            base_name = os.path.splitext(file.filename)[0]
+            safe_base_name = re.sub(r'\W+', '_', base_name)
+            safe_sheetname = re.sub(r'\W+', '_', sheetname)
 
-        try:
-            success, error = insert_data_from_excel(file, original_table_name, copy_table_name, sheetname)
+            original_table_name = f"{safe_base_name}_{safe_sheetname}"
+            copy_table_name = f"{original_table_name}_copy"
 
-            if success:
-                return jsonify({
-                    'message': 'File uploaded and data saved successfully',
-                    'success': True
-                }), 200
-            else:
-                return jsonify({'error': f'Failed to save data: {error}'}), 400
+            try:
+                success, error = insert_data_from_excel(file, original_table_name, copy_table_name, sheetname)
 
-        except Exception as e:
-            print(f"Error: {str(e)}")
-            return jsonify({'error': f'An error occurred: {str(e)}'}), 500
+                if success:
+                    return jsonify({
+                        'message': 'File uploaded and data saved successfully',
+                        'success': True,
+                        'tableName': original_table_name  # ✅ important for frontend
+                    }), 200
+                else:
+                    return jsonify({'error': f'Failed to save data: {error}'}), 400
+
+            except Exception as e:
+                print(f"Error: {str(e)}")
+                return jsonify({'error': f'An error occurred: {str(e)}'}), 500
+
+        else:
+            # Case 1: initial upload -> return available sheet names
+            try:
+                sheet_names = get_sheet_names(file)
+                return jsonify({'sheetNames': sheet_names}), 200
+
+            except Exception as e:
+                print(f"Error getting sheet names: {str(e)}")
+                return jsonify({'error': f'Failed to get sheet names: {str(e)}'}), 500
 
     return jsonify({'message': 'Please use POST method to upload files.'}), 405
 
 
+
+
 # remove_duplicate Router
 @main.route('/remove_duplicates', methods=['POST'])
-@token_required
+  #@token_required
 def remove_duplicates():
     try:
         data = request.json

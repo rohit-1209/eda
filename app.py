@@ -14,8 +14,8 @@ def create_app():
     app.url_map.strict_slashes = False
     app.config['SECRET_KEY'] = 'ZfvEbWyeHoGbcNYYs-o'
     CORS(app,
-         supports_credentials=True,
-         resources={r"/*": {"origins": "*"}}
+         supports_credentials=False,
+         resources={r"/*": {"origins": "http://localhost:3000"}}
          )
 
     warnings.simplefilter('ignore')
