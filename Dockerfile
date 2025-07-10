@@ -4,10 +4,10 @@ FROM dockerproxy.repos.tech.orange/python:3.12
 WORKDIR /updated_flask_autoeda
 
 # Copy the requirements file
-COPY requirements.txt .
+COPY requirements-rohit.txt .
 
 # Install dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements-rohit.txt
 
 # Copy the entire project
 COPY . .

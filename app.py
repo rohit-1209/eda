@@ -13,9 +13,13 @@ def create_app():
     app.json_encoder = CustomJSONEncoder
     app.url_map.strict_slashes = False
     app.config['SECRET_KEY'] = 'ZfvEbWyeHoGbcNYYs-o'
+    # CORS(app,
+    #      supports_credentials=False,
+    #      resources={r"/*": {"origins": "http://localhost:3000"}}
+    #      )
     CORS(app,
-         supports_credentials=False,
-         resources={r"/*": {"origins": "http://localhost:3000"}}
+         supports_credentials=True,
+         resources={r"/*": {"origins": "*"}}
          )
 
     warnings.simplefilter('ignore')
