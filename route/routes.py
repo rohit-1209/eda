@@ -81,7 +81,7 @@ main = Blueprint("main", __name__)
 
 # count Router
 @main.route('/get_data', methods=['GET'])
-  #@token_required
+@token_required
 def get_data_display():
     """Display dataset overview from the specified table."""
     table_name = request.args.get('table_name')
@@ -110,7 +110,7 @@ def get_data_display():
 
 # datatype_manage Router
 @main.route('/check_table/<table_name>', methods=['GET'])
-  #@token_required
+@token_required
 def check_table_exists(table_name):
     """Check if a table exists and return its column information."""
     try:
@@ -129,7 +129,7 @@ def check_table_exists(table_name):
 
 
 @main.route('/manage_datatype', methods=['POST'])
-  #@token_required
+@token_required
 def change_data_types():
     """Change the data types of columns in a table."""
     try:
@@ -163,7 +163,7 @@ def change_data_types():
 
 # datatype Router
 @main.route('/datatypes', methods=['GET'])
-  #@token_required
+@token_required
 def display_data_types():
     """Display the data types of columns in the specified table."""
     try:
@@ -194,7 +194,7 @@ def display_data_types():
 
 # display_f Router
 @main.route('/data', methods=['GET'])
-  #@token_required
+@token_required
 def fetch_data():
     try:
         filename = request.args.get('Filename')
@@ -222,7 +222,7 @@ def fetch_data():
 
 # feature_engineering Router
 @main.route('/feature_engineering', methods=['POST'])
-  #@token_required
+@token_required
 def handle_categorical():
     try:
         data = request.json
@@ -255,7 +255,7 @@ def handle_categorical():
 
 # Feedback Route
 @main.route('/feedback', methods=['POST'])
-  #@token_required
+@token_required
 def submit_feedback():
     try:
         data = request.get_json()
@@ -283,7 +283,7 @@ def submit_feedback():
 
 # fill_missing Router
 @main.route('/handle/fill', methods=['POST'])
-  #@token_required
+@token_required
 def handle_missing_values():
     try:
         data = request.get_json()
@@ -321,7 +321,7 @@ def handle_missing_values():
 
 # filtering Router
 @main.route('/filtering', methods=['POST'])
-  #@token_required
+@token_required
 def filter_data():
     try:
         data = request.json
@@ -377,7 +377,7 @@ def login():
 
 # logout Route
 @main.route('/logout', methods=['POST'])
-  #@token_required
+@token_required
 def logout_data():
     if request.method == 'POST':
         data = request.get_json()
@@ -407,7 +407,7 @@ def logout_data():
 
 # pre_stats Route
 @main.route('/stats', methods=['GET'])
-  #@token_required
+@token_required
 def display_statistics():
     logger.info("Received request for statistics")
     try:
@@ -433,7 +433,7 @@ def display_statistics():
 
 # remove_column Router
 @main.route('/manage_columns', methods=['POST'])
-  #@token_required
+@token_required
 def manage_columns():
     """Remove columns in the specified table based on user input."""
     try:
@@ -465,7 +465,7 @@ def manage_columns():
 
 # rename_column Route
 @main.route('/rename_column', methods=['POST'])
-  #@token_required
+@token_required
 def rename_columns_copy_api():
     try:
         data = request.json
@@ -490,7 +490,7 @@ def rename_columns_copy_api():
 
 # rollback Router
 @main.route('/sync', methods=['POST'])
-  #@token_required
+@token_required
 def sync_tables_route():
     try:
         # Validate input
@@ -525,7 +525,7 @@ def sync_tables_route():
 
 # updated_count Router
 @main.route('/updated_overview', methods=['GET'])
-  #@token_required
+@token_required
 def display_overview():
     """Display dataset overview from the specified table's copy."""
     try:
@@ -574,7 +574,7 @@ def display_overview():
 
 # Updated_display Router
 @main.route('/updated_display', methods=['GET'])
-  #@token_required
+@token_required
 def fetched_data():
     try:
         # Get filename from query parameter
@@ -606,7 +606,7 @@ def fetched_data():
 
 # updtaed_statistics
 @main.route('/updated_statistics', methods=['GET'])
-  #@token_required
+@token_required
 def get_updated_statistics():
     try:
         table_name = request.args.get('Filename')
@@ -634,7 +634,7 @@ from route.routes import main
   # adjust import as needed
 
 @main.route('/upload/', methods=['POST', 'GET'])
-#   #@token_required  # Uncomment if you want to enable token checking later
+@token_required  # Uncomment if you want to enable token checking later
 def upload_excel():
     if request.method == 'POST':
         print("Request files:", request.files)
@@ -698,7 +698,7 @@ def upload_excel():
 
 # remove_duplicate Router
 @main.route('/remove_duplicates', methods=['POST'])
-  #@token_required
+@token_required
 def remove_duplicates():
     try:
         data = request.json
