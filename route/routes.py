@@ -124,7 +124,7 @@ def check_table_exists(table_name):
         return jsonify(result), 200
 
     except Exception as e:
-        logger.error(f"Unexpected error in check_table_exists: {str(e)}")
+        # logger.error(f"Unexpected error in check_table_exists: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
 
