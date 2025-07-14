@@ -52,7 +52,8 @@ def remove_columns(original_table_name, sheet_name, columns_to_remove):
     
     try:
         # Create the table name with sheet name
-        table_name = f"{original_table_name}_{sheet_name}_copy".lower()
+        # table_name = f"{original_table_name}_{sheet_name}_copy".lower()
+        table_name = f"{original_table_name}_copy".lower()
         
         logger.info(f"Removing columns from table: {table_name}")
         logger.info(f"Columns to remove: {columns_to_remove}")
@@ -67,7 +68,7 @@ def remove_columns(original_table_name, sheet_name, columns_to_remove):
         table_exists, available_tables = verify_table_exists(cursor, table_name)
         
         if not table_exists:
-            return None, f"Table '{table_name}' does not exist. Available tables: {available_tables}"
+            return None, f"Table '{table_name}' does not exist."
 
         # Construct the SQL command to remove columns
         for column in columns_to_remove:

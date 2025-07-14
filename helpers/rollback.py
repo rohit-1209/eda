@@ -105,9 +105,10 @@ def sync_tables(table_name, sheet_name):
     
     try:
         # Create table names
-        original_table = f"{table_name}_{sheet_name}".lower()
-        copy_table = f"{table_name}_{sheet_name}_copy".lower()
-        
+        # original_table = f"{table_name}_{sheet_name}".lower()
+        original_table = f"{table_name}".lower()
+        # copy_table = f"{table_name}_{sheet_name}_copy".lower()
+        copy_table = f"{table_name}_copy".lower()
         # Establish database connection
         conn = db.get_db_connection()
         if not conn:
