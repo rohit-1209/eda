@@ -22,4 +22,4 @@ ENV FLASK_APP=run.py
 
 # Command to run the application
 # CMD ["python", "app.py"]
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "4", "--threads", "10", "--limit-request-field_size", "16380", "--worker-class", "gevent", "run:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "2", "--threads", "4", "--limit-request-field_size", "16380", "--worker-class", "gevent", "--timeout", "300", "run:app"]
