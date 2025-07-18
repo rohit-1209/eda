@@ -1,10 +1,10 @@
-FROM dockerproxy.repos.tech.orange/python:3.12
+FROM dockerproxy.repos.tech.orange/python:3.11-slim
 
 # Set the working directory
 WORKDIR /updated_flask_autoeda
 
 # Copy the requirements file
-COPY requirements-rohit.txt .
+COPY requirements.txt .
 
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements-rohit.txt
@@ -18,8 +18,8 @@ EXPOSE 8000
 # Set environment variable
 ENV PYTHONUNBUFFERED=1
 
-ENV FLASK_APP=app.py
+ENV FLASK_APP=run.py
 
 # Command to run the application
-CMD ["python", "app.py"]
-# CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "4", "--threads", "10", "--limit-request-field_size", "16380", "--worker-class", "gevent", "run:app"]
+# CMD ["python", "app.py"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "4", "--threads", "10", "--limit-request-field_size", "16380", "--worker-class", "gevent", "run:app"]
