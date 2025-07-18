@@ -7,7 +7,7 @@ WORKDIR /updated_flask_autoeda
 COPY requirements.txt .
 
 # Install dependencies
-RUN pip install --no-cache-dir -r requirements-rohit.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the entire project
 COPY . .
