@@ -704,12 +704,12 @@ def remove_duplicates():
         data = request.json
         original_table_name = data.get('table_name')
         sheet_name = data.get('sheet_name')
-        duplicate_columns = data.get('duplicate_columns')  # List of columns to check for duplicates
+        duplicate_columns = data.get('duplicate_columns')  
 
         if not original_table_name or not sheet_name or not duplicate_columns:
             return jsonify({"error": "Missing required fields: table_name, sheet_name, or duplicate_columns"}), 400
 
-        copy_table_name = f"{original_table_name}_{sheet_name}_copy".lower()
+        copy_table_name = f"{original_table_name}_copy".lower()
 
         result, error = remove_duplicates_from_table(copy_table_name, duplicate_columns)
 
