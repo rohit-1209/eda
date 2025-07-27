@@ -351,6 +351,7 @@ def filter_data():
 @main.route('/login', methods=['POST'])
 def login():
     try:
+        print(request.get_json())
         data = request.get_json()
         username = data.get("username")
         password = data.get("password")
@@ -661,6 +662,17 @@ def upload_excel():
             base_name = os.path.splitext(file.filename)[0]
             safe_base_name = re.sub(r'\W+', '_', base_name)
             safe_sheetname = re.sub(r'\W+', '_', sheetname)
+
+            # Truncate names if they're too long (PostgreSQL has 63 byte limit for identifiers)
+            max_length = 30  # Allow 30 chars for each part to stay under the limit
+            if len(safe_base_name) > max_length:
+                safe_base_name = safe_base_name[:max_length]
+            if len(safe_sheetname) > max_length:
+                safe_sheetname = safe_sheetname[:max_length]
+
+            # Convert to lowercase to avoid case sensitivity issues
+            safe_base_name = safe_base_name.lower()
+            safe_sheetname = safe_sheetname.lower()
 
             original_table_name = f"{safe_base_name}_{safe_sheetname}"
             copy_table_name = f"{original_table_name}_copy"
