@@ -199,13 +199,15 @@ def fetch_data():
     try:
         filename = request.args.get('Filename')
         sheet_name = request.args.get('sheetName')
+        page = int(request.args.get('page', 0))
+        page_size = int(request.args.get('pageSize', 10))
 
-        logger.info(f"Fetching data for file: {filename}, sheet: {sheet_name}")
+        logger.info(f"Fetching data for file: {filename}, sheet: {sheet_name}, page: {page}, pageSize: {page_size}")
 
         if not filename or not sheet_name:
             return jsonify({"error": "Filename and sheetName are required"}), 400
 
-        result, error = get_table_data(filename, sheet_name)
+        result, error = get_table_data(filename, sheet_name, page, page_size)
 
         if error:
             if "does not exist" in error:
@@ -535,14 +537,17 @@ def display_overview():
         if not Filename:
             return jsonify({"error": "Filename is required as a query parameter"}), 400
 
-        # Get data from the table using Gets_Data
-        result = Gets_Data(Filename)
+        # Get data from the table using Gets_Data without pagination
+        # Since we don't need pagination for overview, pass None for page and page_size
+        result = Gets_Data(Filename, None, None)
 
         # Check if result is an error response
         if isinstance(result, tuple) and len(result) == 2 and isinstance(result[0], dict) and 'error' in result[0]:
             return jsonify(result[0]), result[1]
 
-        data, columns = result
+        # In the updated Gets_Data function, when pagination is not requested,
+        # it returns just the data (not a tuple with columns)
+        data = result
 
         # Format data as a DataFrame for analysis
         df = pd.DataFrame(data)
@@ -573,6 +578,7 @@ def display_overview():
         return jsonify({"error": str(e)}), 500
 
 
+
 # Updated_display Router
 @main.route('/updated_display', methods=['GET'])
 @token_required
@@ -580,25 +586,45 @@ def fetched_data():
     try:
         # Get filename from query parameter
         filename = request.args.get('Filename')
+
+        # Check if pagination parameters are provided
+        pagination_requested = 'page' in request.args and 'pageSize' in request.args
+
+        if pagination_requested:
+            page = int(request.args.get('page', 0))
+            page_size = int(request.args.get('pageSize', 10))
+        else:
+            # Default values for backward compatibility
+            page = None
+            page_size = None
+
         if not filename:
             return jsonify({"error": "Filename parameter is required"}), 400
 
-        logger.info(f"Received request for filename: {filename}")
+        logger.info(f"Received request for filename: {filename}, pagination requested: {pagination_requested}")
 
         # Get data from the table
-        result = Gets_Data(filename)
+        result = Gets_Data(filename, page, page_size)
 
         # Check if result is an error response
         if isinstance(result, tuple) and len(result) == 2:
             if isinstance(result[0], dict) and 'error' in result[0]:
                 logger.error(f"Error in Gets_Data: {result[0]['error']}")
                 return jsonify(result[0]), result[1]
-            data, columns = result
-        else:
-            data, columns = result
 
-        logger.info(f"Successfully processed data with {len(data)} rows")
-        return jsonify(data)
+        # Handle different return formats based on pagination
+        if pagination_requested and len(result) == 3:
+            data, columns, total_rows = result
+            logger.info(f"Successfully processed paginated data with {len(data)} rows, total rows: {total_rows}")
+            return jsonify({
+                "data": data,
+                "totalRows": total_rows
+            })
+        else:
+            # For backward compatibility, return just the data
+            data = result
+            logger.info(f"Successfully processed data with {len(data)} rows")
+            return jsonify(data)
 
     except Exception as e:
         logger.error(f"Error in fetched_data: {str(e)}")
@@ -650,8 +676,8 @@ def upload_excel():
         if file.filename == '':
             return jsonify({'error': 'No file selected'}), 400
 
-        if not file.filename.endswith(('.xls', '.xlsx', '.csv')):
-            return jsonify({'error': 'Invalid file format. Only .xls, .csv and .xlsx are allowed.'}), 400
+        if not file.filename.endswith(('.xlsx')):
+            return jsonify({'error': 'Invalid file format. Only .xlsx format is allowed.'}), 400
 
         # Get sheetName if present
         sheetname = request.form.get('sheetName')
@@ -664,7 +690,7 @@ def upload_excel():
             safe_sheetname = re.sub(r'\W+', '_', sheetname)
 
             # Truncate names if they're too long (PostgreSQL has 63 byte limit for identifiers)
-            max_length = 30  # Allow 30 chars for each part to stay under the limit
+            max_length = 10  # Allow 30 chars for each part to stay under the limit
             if len(safe_base_name) > max_length:
                 safe_base_name = safe_base_name[:max_length]
             if len(safe_sheetname) > max_length:

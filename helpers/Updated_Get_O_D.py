@@ -6,27 +6,28 @@ import logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
 
-def Gets_Data(table_name):
+
+def Gets_Data(table_name, page=None, page_size=None):
     db = Database()
     conn = None
     cursor = None
     try:
         # Remove extra spaces and ensure lowercase
         table_name = table_name.strip().lower()
-        
+
         # Ensure we're using the correct table name (with _copy suffix)
         if not table_name.endswith('_copy'):
             table_name = f"{table_name}_copy"
-        
+
         conn = db.get_db_connection()
         if not conn:
             return {"error": "Database connection failed"}, 500
 
         cursor = conn.cursor()
-        
+
         # Debug: Print the table name being queried
         logger.debug(f"Attempting to query table: {table_name}")
-        
+
         # Check if table exists
         cursor.execute("""
             SELECT EXISTS (
@@ -34,7 +35,7 @@ def Gets_Data(table_name):
                 WHERE table_name = %s
             );
         """, (table_name,))
-        
+
         exists = cursor.fetchone()[0]
         if not exists:
             logger.warning(f"Table {table_name} does not exist")
@@ -48,18 +49,35 @@ def Gets_Data(table_name):
             AND column_name != 'id'
             ORDER BY ordinal_position;
         """, (table_name,))
-        
+
         columns = [col[0] for col in cursor.fetchall()]
-        
-        # Construct the query with quoted column names
-        columns_str = ', '.join(f'"{col}"' for col in columns)
-        query = f'SELECT {columns_str} FROM "{table_name}";'
-        logger.debug(f"Executing query: {query}")
-        cursor.execute(query)
-        
+
+        # Determine if we're using pagination
+        pagination_enabled = page is not None and page_size is not None
+
+        if pagination_enabled:
+            # Get total row count for pagination
+            cursor.execute(f'SELECT COUNT(*) FROM "{table_name}";')
+            total_rows = cursor.fetchone()[0]
+
+            # Calculate offset for pagination
+            offset = page * page_size
+
+            # Construct the query with quoted column names and pagination
+            columns_str = ', '.join(f'"{col}"' for col in columns)
+            query = f'SELECT {columns_str} FROM "{table_name}" LIMIT %s OFFSET %s;'
+            logger.debug(f"Executing paginated query: {query} with params: {page_size}, {offset}")
+            cursor.execute(query, (page_size, offset))
+        else:
+            # For backward compatibility, fetch all rows
+            columns_str = ', '.join(f'"{col}"' for col in columns)
+            query = f'SELECT {columns_str} FROM "{table_name}";'
+            logger.debug(f"Executing full query: {query}")
+            cursor.execute(query)
+
         # Fetch data
         data = cursor.fetchall()
-        
+
         # Convert data to list of dictionaries
         result = []
         for row in data:
@@ -68,12 +86,16 @@ def Gets_Data(table_name):
                 row_dict[col] = row[i]
             result.append(row_dict)
 
-        logger.info(f"Successfully retrieved {len(result)} rows")
-        return result, columns
+        if pagination_enabled:
+            logger.info(f"Successfully retrieved {len(result)} rows out of {total_rows} total")
+            return result, columns, total_rows
+        else:
+            logger.info(f"Successfully retrieved {len(result)} rows")
+            return result
 
     except Exception as e:
         logger.error(f"Error retrieving data: {str(e)}")
         return {"error": f"Database error: {str(e)}"}, 500
-        
+
     finally:
         db.close_cursor_and_connection(cursor, conn)

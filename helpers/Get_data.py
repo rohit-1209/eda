@@ -106,25 +106,26 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
 
 
-def get_table_data(filename, sheet_name):
+def get_table_data(filename, sheet_name, page=0, page_size=10):
     """
-    Retrieve data from a table based on filename and sheet name.
+    Retrieve data from a table based on filename and sheet name with pagination.
 
     Args:
         filename (str): The name of the file
         sheet_name (str): The name of the sheet
+        page (int): The page number (0-based)
+        page_size (int): The number of rows per page
 
     Returns:
-        tuple: (result, error) where result contains data and columns or None if error
+        tuple: (result, error) where result contains data, columns, and total rows or None if error
     """
     db = Database()
     conn = None
     cursor = None
 
     try:
-        # table_name = f"{filename.strip().lower()}_{sheet_name.lower()}"
-        table_name =f'{filename.strip().lower()}'
-        logger.info(f"Retrieving data from table: {table_name}")
+        table_name = f'{filename.strip().lower()}'
+        logger.info(f"Retrieving data from table: {table_name} (page {page}, size {page_size})")
 
         conn = db.get_db_connection()
         if not conn:
@@ -155,7 +156,7 @@ def get_table_data(filename, sheet_name):
         columns = [col[0] for col in cursor.fetchall()]
         logger.debug(f"Columns before filtering: {columns}")
 
-        # Remove 'id' column if it exists
+        # Remove 'id' column if it exists (same as before)
         try:
             if 'id' in columns:
                 cursor.execute(f'ALTER TABLE "{table_name}" DROP COLUMN id;')
@@ -177,11 +178,14 @@ def get_table_data(filename, sheet_name):
                 cursor.close()
                 cursor = conn.cursor()
 
+        # Get total row count for pagination
+        cursor.execute(f'SELECT COUNT(*) FROM "{table_name}";')
+        total_rows = cursor.fetchone()[0]
 
-            # Continue even if dropping the column fails
-
-        # Get the data
-        cursor.execute(f'SELECT * FROM "{table_name}";')
+        # Get the paginated data
+        offset = page * page_size
+        cursor.execute(f'SELECT * FROM "{table_name}" LIMIT %s OFFSET %s;',
+                      (page_size, offset))
         data = cursor.fetchall()
 
         # Convert data to list of lists for JSON serialization
@@ -189,7 +193,8 @@ def get_table_data(filename, sheet_name):
 
         return {
             'columns': columns,
-            'data': data_list
+            'data': data_list,
+            'totalRows': total_rows
         }, None
 
     except Exception as e:
