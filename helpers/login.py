@@ -46,7 +46,7 @@ def authenticate_user(username, password):
         # Generate JWT token
         token = jwt.encode({
             'user': username,
-            'exp': datetime.utcnow() + timedelta(hours=1)
+            'exp': datetime.utcnow() + timedelta(hours=5)
         }, current_app.config['SECRET_KEY'], algorithm='HS256')
         
         return {

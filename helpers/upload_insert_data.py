@@ -135,6 +135,9 @@ def get_sheet_names(file_storage):
         return excel_data.sheet_names
     except Exception as e:
         raise RuntimeError(f"Could not extract sheet names: {str(e)}")
+
+
+
 def insert_data_from_excel(file, original_table_name, copy_table_name, sheetname):
     print("Starting data import...")
     db = Database()
@@ -232,5 +235,4 @@ def insert_data_from_excel(file, original_table_name, copy_table_name, sheetname
 
     finally:
         db.close_cursor_and_connection(cursor, conn)
-
 

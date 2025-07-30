@@ -12,7 +12,7 @@ DB_CONFIG = {
     'host': os.getenv('DB_HOST'),
     'user': os.getenv('DB_USER'),
     'password': os.getenv('DB_PASSWORD'),
-    'dbname': os.getenv('DB_NAME')  # ✅ This must be 'dbname'
+    'dbname': os.getenv('DB_NAME')  
 }
 
 class Database:
@@ -21,7 +21,7 @@ class Database:
 
     def get_db_connection(self):
         try:
-            print("🔧 DB connection config:", self.config)  # ADD THIS
+             
             conn = psycopg2.connect(**self.config)
             print("✅ Database connection established.")  # ADD THIS
             return conn

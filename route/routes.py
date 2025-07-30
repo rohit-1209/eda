@@ -5,6 +5,7 @@ import helpers
 import pandas as pd
 import re
 from helpers.Get_data import get_table_data
+from helpers.Get_datas import get_table_datas
 from helpers.Updated_Get_O_D import Gets_Data
 from helpers.updated_stats import get_table_statistic
 import json
@@ -90,7 +91,7 @@ def get_data_display():
     if not table_name:
         return jsonify({"error": "Table name is required"}), 400
 
-    result, error = get_table_data(table_name, sheet_name)
+    result, error = get_table_datas(table_name, sheet_name)
 
     if error:
         return jsonify({"error": error}), 400
