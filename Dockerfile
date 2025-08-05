@@ -1,4 +1,4 @@
-FROM dockerproxy.repos.tech.orange/python:3.11-slim
+FROM python:3.11-slim
 
 # Set the working directory
 WORKDIR /updated_flask_autoeda
